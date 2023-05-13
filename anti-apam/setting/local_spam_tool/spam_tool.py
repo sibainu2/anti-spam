@@ -1,0 +1,6 @@
+
+
+
+
+def spam():
+    pass
