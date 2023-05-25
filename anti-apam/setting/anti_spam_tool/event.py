@@ -7,12 +7,12 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateT
 import MeCab
 
 class User():
-    def __init__(self,id:int,name:str,mute:bool=False,threat:float=0,message:list=[]) -> None:
+    def __init__(self,id:int,name:str,mute:bool=False,threat:float=0,messages:list=[]) -> None:
         self.id = id
         self.name = name
         self.mute = mute
         self.threat = threat
-        self.message = message#messageのIDのリストです。
+        self.messages = messages#messageのIDのリストです。
 
     def add_message(self,message_id:int):
         self.message.append(message_id)
@@ -29,6 +29,9 @@ class Message():
         self.content = content
         self.user = user#userのIDです。
         self.delete = delete
+
+    def clear(self):
+        self.user.messages.pop(self.id)
 
 class TmpGuild():
     def __init__(self):
