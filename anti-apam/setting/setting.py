@@ -1,6 +1,6 @@
 
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Boolean
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship,declarative_base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, event
 import datetime
@@ -10,17 +10,9 @@ import random
 import string
 
 
-DB_USER = 'postgres'
-DB_PASSWORD = '1224'
-DB_HOST = 'localhost'
-DB_PORT = '5432'
-DB_NAME = 'postgres'
-
-# PostgreSQLに接続するためのURLを作成
-DATABASE_URL = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
 # create_engine関数でエンジンを作成
-engine = create_engine(DATABASE_URL)
+engine = create_engine('sqlite:///test.db', echo=False)
 
 # セッションを作成
 Session = sessionmaker(bind=engine)
@@ -35,7 +27,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    mute = Column(Boolean)#発言権
+    mute = Column(Boolean,default=False)#発言権
     threat = Column(Integer)#脅威
     messages = relationship("Message", back_populates="user")
 
@@ -44,15 +36,18 @@ class Message(Base):
     __tablename__ = 'messages'
 
     id = Column(Integer, primary_key=True)
-    message = Column(String)
+    content = Column(String)
     time = Column(DateTime, default=datetime.datetime.utcnow)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship("User", back_populates="messages")
 
-    def __init__(self, message, user):
+    def __init__(self, content, user):
+        if user is None:
+            raise ValueError("Cannot add message because user is from")
         if user.mute:
             raise ValueError('Cannot add message to muted user')
-        self.message = message
+
+        self.content = content
         self.user = user
 
 #Base.metadata.drop_all(engine)
@@ -87,10 +82,10 @@ def randomname(n):
    return ''.join(random.choices(string.ascii_letters + string.digits, k=n))
 
 async def spam(number):
-    user = session.get(User,number)
+    user = session.query(User).get(number)
     for i in range(1,random.randint(5,10)):
         try:
-            message = Message(message=f'こんにちわ日本語って入るの？{randomname(5)}', user=user)
+            message = Message(content=f'こんにちわ日本語って入るの？{randomname(5)}', user=user)
             session.add(message)
             session.commit()
             await asyncio.sleep(random.uniform(0.05,0.5))

@@ -25,7 +25,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    mute = Column(Boolean)#発言権
+    mute = Column(Boolean,default=False)#発言権
     threat = Column(Integer)#脅威
     messages = relationship("Message", back_populates="user")
 
@@ -34,32 +34,36 @@ class Message(Base):
     __tablename__ = 'messages'
 
     id = Column(Integer, primary_key=True)
-    message = Column(String)
+    content = Column(String)
     time = Column(DateTime, default=datetime.datetime.utcnow)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship("User", back_populates="messages")
 
-    def __init__(self, message, user):
+    def __init__(self, content, user):
+        if user is None:
+            raise ValueError("Cannot add message because user is from")
         if user.mute:
             raise ValueError('Cannot add message to muted user')
-        self.message = message
+        self.content = content
         self.user = user
 
-Base.metadata.drop_all(engine)
-# テーブルを作成
-Base.metadata.create_all(engine)
 
-# データを追加
-for name in data.USER_NAMES:
-    user = User(name=name, mute=False, threat=0)
-    session.add(user)
-session.commit()
+if __name__ == "__main__":
+    Base.metadata.drop_all(engine)
+    # テーブルを作成
+    Base.metadata.create_all(engine)
 
-# データを取得
-users = session.query(User).all()
-for user in users:
-    print(user.name, user.id)
+    # データを追加
+    for name in data.USER_NAMES:
+        user = User(name=name, mute=False, threat=0)
+        session.add(user)
+    session.commit()
 
-messages = session.query(Message).all()
-for message in messages:
-    print(message.user.name, message.id)
+    # データを取得
+    users = session.query(User).all()
+    for user in users:
+        print(user.name, user.id)
+
+    messages = session.query(Message).all()
+    for message in messages:
+        print(message.user.name, message.id)
