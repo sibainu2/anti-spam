@@ -6,10 +6,15 @@ import datetime
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, Boolean
 import MeCab
 
+#Classのidについて
+#UserクラスとメッセージクラスにあるIDはdiscordのIDを使用してください。
+#wordクラスにあるIDは単語の順番どおりにIDを振ってください
+
 class User():
-    def __init__(self,id:int,name:str,mute:bool=False,threat:float=0,messages:list=[]) -> None:
+    def __init__(self,id:int,name:str,bot:bool,mute:bool=False,threat:float=0,messages:list=[]) -> None:
         self.id = id
         self.name = name
+        self.bot = bot
         self.mute = mute
         self.threat = threat
         self.messages = messages#messageのIDのリストです。
@@ -23,18 +28,36 @@ class User():
     def unsilence(self):
         self.mute = False
 
+class Word():
+    def __init__(self,id:int,word:str,top:int,end:int,):
+        self.id = id
+        self.word = word
+        self.top = top
+        self.end = end
+
+    def __add__(self,other):
+        if type(other) != Word:
+            raise TypeError(f"同じクラスではありません。[{other.word}:{type(other)}]")
+        if (self.end +1 - other.top) != 0:
+            raise ValueError(f"単語が連続した順番ではありません。[({self.word,self.top,self.end},{other.word,other.top,other.end})]")
+    
+        return Word(id=None,word=self.word+other.word,top=self.top,end=other.end)
+
 class Message():
-    def __init__(self,id:int,content:str,user:User,delete:bool):
+    def __init__(self,id:int,content:str,user:User,delete:bool,guild:int):
         self.id = id
         self.content = content
         self.user = user#userのIDです。
         self.delete = delete
+        self.guild = guild
+
 
     def clear(self):
         self.user.messages.pop(self.id)
 
 class TmpGuild():
-    def __init__(self):
+    def __init__(self,id):
+        self.id = id
         self.messages:list[Message] = []
         self.users:list[User] = []
 
@@ -77,9 +100,12 @@ def analyze_text(text):
 
     return output
 
-
+tmplist = []
 
 async def on_message(message:Message):
+    global tmplist
+    if message.user.bot:
+        return print("処理はパスされました。理由:BOT")
 
     user = message.user
     print(message.id,user.name,analyze_text(message.content))

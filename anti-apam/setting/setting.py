@@ -30,6 +30,7 @@ class User(Base):
     mute = Column(Boolean,default=False)#発言権
     threat = Column(Integer)#脅威
     messages = relationship("Message", back_populates="user")
+    bot = Column(Boolean,default=False)
 
 
 class Message(Base):

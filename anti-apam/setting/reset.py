@@ -28,6 +28,14 @@ class User(Base):
     mute = Column(Boolean,default=False)#発言権
     threat = Column(Integer)#脅威
     messages = relationship("Message", back_populates="user")
+    bot = Column(Boolean,default=False)
+
+class Guild(Base):
+    __tablename__ = "guilds"
+
+    id = Column(Integer,primary_key=True)
+    name = Column(String)
+    messages = relationship("Message", back_populates="guild")
 
 
 class Message(Base):
@@ -38,14 +46,18 @@ class Message(Base):
     time = Column(DateTime, default=datetime.datetime.utcnow)
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship("User", back_populates="messages")
+    guild = relationship("Guild", back_populates="messages")
 
-    def __init__(self, content, user):
+    def __init__(self, content, user,guild):
         if user is None:
             raise ValueError("Cannot add message because user is from")
         if user.mute:
             raise ValueError('Cannot add message to muted user')
+        if guild is None:
+            raise ValueError("guild is NoneType!")
         self.content = content
         self.user = user
+        self.guild = guild
 
 
 if __name__ == "__main__":
